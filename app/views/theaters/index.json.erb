@@ -1,0 +1,7 @@
+<%=
+  @theaters.map{|t|
+    t.attributes.merge(
+      :showtimes => t.showtimes
+    )
+  }.to_json
+%>
