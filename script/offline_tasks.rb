@@ -49,13 +49,16 @@ class OfflineTasks
   end
 
   def refresh_times
-    ([TimeMigration.last.date, Date.today].max+1..Date.today+5).each do |date|
-      zip_codes = Theater.zip_codes
-      zip_codes.compact!
-      zip_codes.delete('')
-      counter = 0
-      while (zip = zip_codes.shift) do
-        begin
+    begin
+      current_date = (TimeMigration.last.date rescue Date.yesterday)
+      ([current_date, Date.today].max+1..Date.today+5).each do |date|
+        logger.debug("refreshing show times for: #{date.to_s(:date_yahoo)}")
+        zip_codes = Theater.zip_codes
+        zip_codes.compact!
+        zip_codes.delete('')
+        counter = 0
+      
+        while (zip = zip_codes.shift) do        
           showtimes = Theater.showtimes(zip, date)
           showtimes.each do |s|
             theater = Theater.find_or_create_by_yid(s[:theater])
@@ -65,12 +68,17 @@ class OfflineTasks
                 :mid   => showtime[:mid],
                 :title => showtime[:title]
               )
-              show = theater.shows.first(:conditions => {:date => s[:date], :movie_id => movie.id})
-              theater.shows.create(
-                :movie => movie,
-                :date  => s[:date],
-                :times => showtime[:times].to_json
-              ) if show.blank?
+              show = theater.shows.first(:conditions => {:date => date, :movie_id => movie.id})
+
+              if show.blank?
+                show = theater.shows.new(
+                  :movie => movie,
+                  :date  => date,
+                  :times => showtime[:times].to_json
+                ) 
+                show.date = date
+                show.save
+              end
           
               zip_codes.delete(theater.zip)
             end if s[:showtimes] && theater
@@ -81,11 +89,12 @@ class OfflineTasks
           logger.debug("requesting: #{zip}")
           logger.debug("counter: #{counter}")
           sleep(1)
-        rescue Exception => e
-          logger.debug("error: #{counter}")
         end
+      
         TimeMigration.create(:date => date)
       end
+    rescue Exception => e
+      logger.debug("error: #{e}")
     end
   end
   

@@ -27,7 +27,7 @@ class Theater < ActiveRecord::Base
           :state  => t['Region'],
           :zip    => t['PostalCode']
         },
-        :date      => Time.parse(response['TheaterList']['date']),
+        :date      => date,
         :showtimes => (t['MovieList']['Movie'].map{|m|{ :mid => m['movie:id'].to_i, :title => m['movie:Title'], :times => m['Shows']['Time'].map{|t| Time.parse(t).strftime('%I:%M') }} } rescue [])
       } rescue nil
     end.compact
