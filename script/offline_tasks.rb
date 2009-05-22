@@ -57,7 +57,9 @@ class OfflineTasks
         zip_codes.delete('')
         counter = 0
       
-        while (zip = zip_codes.shift) do        
+        time_migration = TimeMigration.create(:date => date)
+        
+        while (zip = zip_codes.shift) do          
           showtimes = Theater.showtimes(zip, date)
           showtimes.each do |s|
             theater = Theater.find_or_create_by_yid(s[:theater])
@@ -85,12 +87,15 @@ class OfflineTasks
             logger.debug("Theater #{s[:tid]} not found") if theater.blank?
           end
           counter += 1
+          
+          time_migration.update_attribute(:last_zip, zip)
           logger.debug("requesting: #{zip}")
           logger.debug("counter: #{counter}")
+          
           sleep(1)
         end
-      
-        TimeMigration.create(:date => date)
+        
+        time_migration.update_attribute(:completed_at, Time.now)
       end
     rescue Exception => e
       logger.debug("error: #{e}")

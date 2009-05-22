@@ -9,15 +9,16 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20090522200629) do
+ActiveRecord::Schema.define(:version => 20090522230609) do
 
   create_table "movies", :force => true do |t|
-    t.string   "title",      :null => false
+    t.string   "title",                         :null => false
     t.string   "rating"
     t.integer  "duration"
-    t.integer  "mid",        :null => false
+    t.integer  "mid",                           :null => false
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.boolean  "processed",  :default => false
   end
 
   create_table "shows", :force => true do |t|
@@ -48,9 +49,9 @@ ActiveRecord::Schema.define(:version => 20090522200629) do
   add_index "theaters", ["yid"], :name => "index_theaters_on_yid", :unique => true
 
   create_table "time_migrations", :force => true do |t|
-    t.datetime "created_at"
-    t.datetime "updated_at"
-    t.date     "date",       :null => false
+    t.date     "date",         :null => false
+    t.datetime "completed_at"
+    t.string   "last_zip"
   end
 
 end
