@@ -1,7 +1,9 @@
-#59 23 * * * /var/www/apps/movieme/current/script/offline_tasks refresh_times > /var/www/apps/movieme/current/refresh_showtimes.log 2>&1
+#!/opt/local/bin/env ruby
 
 ENV['RAILS_ENV'] ||= 'production'
 puts "Loading with #{ENV['RAILS_ENV']} environment"
+
+
 
 require File.dirname(__FILE__) + '/../config/environment.rb'
 require 'httparty'
@@ -9,6 +11,7 @@ require 'curb'
 require 'json'
 require 'amazon/ecs'
 
+#59 23 * * * /var/www/apps/movieme/current/script/offline_tasks.rb refresh_times > /var/www/apps/movieme/current/log/refresh_showtimes.log 2>&1
 class OfflineTasks
   def initialize(task, *params)
     @task = task
