@@ -7,7 +7,7 @@ puts "Loading with #{ENV['RAILS_ENV']} environment"
 
 require File.dirname(__FILE__) + '/../config/environment.rb'
 require 'httparty'
-require 'curb'
+# require 'curb'
 require 'json'
 require 'amazon/ecs'
 
