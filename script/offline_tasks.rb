@@ -47,7 +47,7 @@ class OfflineTasks
 
   def refresh_times
     begin
-      latest = TimeMigration.last
+      latest = TimeMigration.last(:conditions => {:completed_at => nil})
       current_date = latest.blank?? Date.today : [latest.date, Date.today].max+1
       
       (current_date..Date.today+5).each do |date|
