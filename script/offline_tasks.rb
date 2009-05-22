@@ -47,8 +47,10 @@ class OfflineTasks
 
   def refresh_times
     begin
-      current_date = (TimeMigration.last.date rescue Date.yesterday)
-      ([current_date, Date.today].max+1..Date.today+5).each do |date|
+      latest = TimeMigration.last
+      current_date = latest.blank?? Date.today : [latest.date, Date.today].max+1
+      
+      (current_date..Date.today+5).each do |date|
         logger.debug("refreshing show times for: #{date.to_s(:date_yahoo)}")
         zip_codes = Theater.zip_codes
         zip_codes.compact!
