@@ -34,7 +34,7 @@ class Theater < ActiveRecord::Base
   end  
   
   def self.zip_codes
-    select_column(:zip, connection.select_all('select distinct(zip) as zip from theaters where zip = 20850 and latitude is not null order by zip asc'))
+    select_column(:zip, connection.select_all('select distinct(zip) as zip from theaters where zip is not null and latitude is not null order by zip asc'))
   end
   
   def self.nearby(lat, lng)
