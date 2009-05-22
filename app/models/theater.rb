@@ -14,7 +14,7 @@ class Theater < ActiveRecord::Base
   end
   
   # http://new.api.movies.yahoo.com/v2/listTheatersByPostalCode?mid=1809752801&pcode=20850&count=20&yprop=msapi
-  def self.showtimes(postal_code, date = Time.now)
+  def self.showtimes(postal_code, date = Date.today)
     response = HTTParty.get("http://new.api.movies.yahoo.com/v2/listTheatersByPostalCode?pcode=#{postal_code}&count=100&yprop=msapi&date=#{date.to_s(:date_yahoo)}")
 
     response['TheaterList']['Theater'].map do |t|
@@ -34,7 +34,7 @@ class Theater < ActiveRecord::Base
   end  
   
   def self.zip_codes
-    select_column(:zip, connection.select_all('select distinct(zip) as zip from theaters where zip is not null order by zip asc'))
+    select_column(:zip, connection.select_all('select distinct(zip) as zip from theaters where zip = 20850 and latitude is not null order by zip asc'))
   end
   
   def self.nearby(lat, lng)

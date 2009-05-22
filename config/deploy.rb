@@ -11,9 +11,7 @@ set :tmpdir_local, File.join(File.dirname(__FILE__),'..','tmp')
 # If you aren't using Subversion to manage your source code, specify
 # your SCM below:
 set :scm, :git
-set :use_pty, true
 set :use_sudo, false
-default_run_options[:pty] = true
 
 role :app, "rack1"
 role :web, "rack1"

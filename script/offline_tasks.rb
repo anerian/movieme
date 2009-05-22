@@ -1,3 +1,5 @@
+#59 23 * * * /var/www/apps/movieme/current/script/offline_tasks refresh_times > /var/www/apps/movieme/current/refresh_showtimes.log 2>&1
+
 ENV['RAILS_ENV'] ||= 'production'
 puts "Loading with #{ENV['RAILS_ENV']} environment"
 
@@ -47,37 +49,43 @@ class OfflineTasks
   end
 
   def refresh_times
-    zip_codes = Theater.zip_codes
-    zip_codes.compact!
-    zip_codes.delete('')
-    counter = 0
-    while (zip = zip_codes.shift) do
-      
-      showtimes = Theater.showtimes(zip)
-      showtimes.each do |s|
-        theater = Theater.find_or_create_by_yid(s[:theater])
+    ([TimeMigration.last.date, Date.today].max+1..Date.today+5).each do |date|
+      zip_codes = Theater.zip_codes
+      zip_codes.compact!
+      zip_codes.delete('')
+      counter = 0
+      while (zip = zip_codes.shift) do
+        begin
+          showtimes = Theater.showtimes(zip, date)
+          showtimes.each do |s|
+            theater = Theater.find_or_create_by_yid(s[:theater])
         
-        s[:showtimes].each do |showtime|          
-          movie = Movie.find_or_create_by_mid(
-            :mid   => showtime[:mid],
-            :title => showtime[:title]
-          )
-          show = theater.shows.first(:conditions => {:date => s[:date], :movie_id => movie.id})
-          theater.shows.create(
-            :movie => movie,
-            :date  => s[:date],
-            :times => showtime[:times].to_json
-          ) if show.blank?
+            s[:showtimes].each do |showtime|          
+              movie = Movie.find_or_create_by_mid(
+                :mid   => showtime[:mid],
+                :title => showtime[:title]
+              )
+              show = theater.shows.first(:conditions => {:date => s[:date], :movie_id => movie.id})
+              theater.shows.create(
+                :movie => movie,
+                :date  => s[:date],
+                :times => showtime[:times].to_json
+              ) if show.blank?
           
-          zip_codes.delete(theater.zip)
-        end if s[:showtimes] && theater
+              zip_codes.delete(theater.zip)
+            end if s[:showtimes] && theater
         
-        logger.debug("Theater #{s[:tid]} not foud") if theater.blank?
+            logger.debug("Theater #{s[:tid]} not found") if theater.blank?
+          end
+          counter += 1
+          logger.debug("requesting: #{zip}")
+          logger.debug("counter: #{counter}")
+          sleep(1)
+        rescue Exception => e
+          logger.debug("error: #{counter}")
+        end
+        TimeMigration.create(:date => date)
       end
-      counter += 1
-      logger.debug("requesting: #{zip}")
-      logger.debug("counter: #{counter}")
-      sleep(1)
     end
   end
   
