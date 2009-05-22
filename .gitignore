@@ -1,2 +1,4 @@
-log/*.log
+log/*
 tmp/**/*
+db/sphinx
+config/*.sphinx.conf

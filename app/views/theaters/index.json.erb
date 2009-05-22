@@ -1,7 +1,17 @@
-<%=
-  @theaters.map{|t|
-    t.attributes.merge(
-      :showtimes => t.showtimes
-    )
+<%= 
+  {
+    :theaters => @theaters.map{|theater|
+      theater.attributes.merge(
+        :shows => theater.shows.map{|show|
+          {
+            :movie_id => show.movie_id,
+            :times    => show.data
+          }
+        }
+      )
+    },
+    :movies => @movies.map{|movie|
+      movie.attributes
+    }
   }.to_json
 %>
