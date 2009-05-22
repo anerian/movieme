@@ -1,4 +1,4 @@
-#!/opt/local/bin/env ruby
+#!/usr/bin/env ruby
 
 ENV['RAILS_ENV'] ||= 'production'
 puts "Loading with #{ENV['RAILS_ENV']} environment"
