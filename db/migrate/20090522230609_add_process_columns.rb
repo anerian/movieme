@@ -1,7 +1,5 @@
 class AddProcessColumns < ActiveRecord::Migration
-  def self.up
-    add_column :movies, :processed, :boolean, :default => false
-    
+  def self.up    
     add_column :time_migrations, :completed_at, :datetime
     add_column :time_migrations, :last_zip, :string
     
