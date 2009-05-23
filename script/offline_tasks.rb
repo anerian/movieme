@@ -71,7 +71,6 @@ class OfflineTasks
         zip_codes = Theater.zip_codes(latest_zip)
         zip_codes.compact!
         zip_codes.delete('')
-
         
         while (zip = zip_codes.shift) do
           logger.debug("#{zip_codes.length} zip codes remaining")
