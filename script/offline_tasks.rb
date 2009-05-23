@@ -47,19 +47,30 @@ class OfflineTasks
 
   def refresh_times
     begin
-      latest = TimeMigration.last(:conditions => {:completed_at => nil})
-      latest_zip = latest.blank?? nil : latest.last_zip
+      latest_migration = TimeMigration.last
+
+      # determine the previous state
+      status, range = 
+        if latest_migration.blank?
+          [:new, current_date..Date.today+5]
+        elsif latest_migration.completed_at.blank?
+          [:error, latest_migration.date..Date.today+5]
+        else
+          [:completed, [latest_migration.date, Date.today].max+1..Date.today+5]
+        end
       
-      current_date = latest.blank?? Date.today : [latest.date, Date.today].max+1
+      logger.debug("previous status: #{status}")
+      logger.debug("range: #{range}")
       
-      (current_date..Date.today+5).each_with_index do |date,i|
+      range.each_with_index do |date, i|
         logger.debug("refreshing show times for: #{date.to_s(:date_yahoo)}")
+        latest_zip = (status == :error && i == 0) ? latest_migration.last_zip : nil
+
         zip_codes = Theater.zip_codes(latest_zip)
         zip_codes.compact!
         zip_codes.delete('')
-        counter = 0
-      
-        time_migration = TimeMigration.create(:date => date)
+
+        time_migration = (status == :error) ? latest_migration : TimeMigration.create(:date => date)
         
         while (zip = zip_codes.shift) do          
           showtimes = Theater.showtimes(zip, date)
@@ -72,7 +83,7 @@ class OfflineTasks
                 :title => showtime[:title]
               )
               show = theater.shows.first(:conditions => {:date => date, :movie_id => movie.id})
-
+              
               if show.blank?
                 show = theater.shows.new(
                   :movie => movie,
@@ -88,11 +99,9 @@ class OfflineTasks
         
             logger.debug("Theater #{s[:tid]} not found") if theater.blank?
           end
-          counter += 1
-          
+              
           time_migration.update_attribute(:last_zip, zip)
           logger.debug("requesting: #{zip}")
-          logger.debug("counter: #{counter}")
           
           sleep(1)
         end
