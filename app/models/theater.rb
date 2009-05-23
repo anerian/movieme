@@ -15,22 +15,26 @@ class Theater < ActiveRecord::Base
   
   # http://new.api.movies.yahoo.com/v2/listTheatersByPostalCode?mid=1809752801&pcode=20850&count=20&yprop=msapi
   def self.showtimes(postal_code, date = Date.today)
-    response = HTTParty.get("http://new.api.movies.yahoo.com/v2/listTheatersByPostalCode?pcode=#{postal_code}&count=100&yprop=msapi&date=#{date.to_s(:date_yahoo)}")
+    begin
+      response = HTTParty.get("http://new.api.movies.yahoo.com/v2/listTheatersByPostalCode?pcode=#{postal_code}&count=100&yprop=msapi&date=#{date.to_s(:date_yahoo)}")
 
-    response['TheaterList']['Theater'].map do |t|
-      {
-        :theater   => {
-          :yid    => t['theater:id'].to_i,
-          :name   => t['Name'],
-          :phone  => t['Phone'],
-          :street => (t['PostalAddress']['DeliveryAddress']['AddressLine'] rescue nil),
-          :state  => t['Region'],
-          :zip    => t['PostalCode']
-        },
-        :date      => date,
-        :showtimes => (t['MovieList']['Movie'].map{|m|{ :mid => m['movie:id'].to_i, :title => m['movie:Title'], :times => m['Shows']['Time'].map{|t| Time.parse(t).strftime('%I:%M') }} } rescue [])
-      } rescue nil
-    end.compact
+      response['TheaterList']['Theater'].map do |t|
+        {
+          :theater   => {
+            :yid    => t['theater:id'].to_i,
+            :name   => t['Name'],
+            :phone  => t['Phone'],
+            :street => (t['PostalAddress']['DeliveryAddress']['AddressLine'] rescue nil),
+            :state  => t['Region'],
+            :zip    => t['PostalCode']
+          },
+          :date      => date,
+          :showtimes => (t['MovieList']['Movie'].map{|m|{ :mid => m['movie:id'].to_i, :title => m['movie:Title'], :times => m['Shows']['Time'].map{|t| Time.parse(t).strftime('%I:%M') }} } rescue [])
+        } rescue nil
+      end.compact
+    rescue
+    end
+    []
   end  
   
   def self.zip_codes(zip = nil)
