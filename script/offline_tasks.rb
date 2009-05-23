@@ -54,15 +54,17 @@ class OfflineTasks
         if latest_migration.blank?
           [:new, current_date..Date.today+5]
         elsif latest_migration.completed_at.blank?
-          [:error, latest_migration.date..Date.today+5]
+          [:error, latest_migration.migrated_at..Date.today+5]
         else
-          [:completed, [latest_migration.date, Date.today].max+1..Date.today+5]
+          [:completed, [latest_migration.migrated_at, Date.today].max+1..Date.today+5]
         end
       
       logger.debug("previous status: #{status}")
       logger.debug("range: #{range}")
       
       range.each_with_index do |date, i|
+        time_migration = (status == :error) ? latest_migration : TimeMigration.create(:migrated_at => date)
+        
         logger.debug("refreshing show times for: #{date.to_s(:date_yahoo)}")
         latest_zip = (status == :error && i == 0) ? latest_migration.last_zip : nil
 
@@ -70,10 +72,11 @@ class OfflineTasks
         zip_codes.compact!
         zip_codes.delete('')
 
-        time_migration = (status == :error) ? latest_migration : TimeMigration.create(:date => date)
         
-        while (zip = zip_codes.shift) do          
+        while (zip = zip_codes.shift) do
+          logger.debug("#{zip_codes.length} zip codes remaining")
           showtimes = Theater.showtimes(zip, date)
+
           showtimes.each do |s|
             theater = Theater.find_or_create_by_yid(s[:theater])
         
@@ -82,18 +85,15 @@ class OfflineTasks
                 :mid   => showtime[:mid],
                 :title => showtime[:title]
               )
-              show = theater.shows.first(:conditions => {:date => date, :movie_id => movie.id})
+              show = theater.shows.first(:conditions => {:shown_on => date, :movie_id => movie.id})
               
               if show.blank?
-                show = theater.shows.new(
-                  :movie => movie,
-                  :date  => date,
-                  :times => showtime[:times].to_json
+                show = theater.shows.create(
+                  :movie     => movie,
+                  :shown_on  => date,
+                  :times     => showtime[:times].to_json
                 ) 
-                show.date = date
-                show.save
               end
-          
               zip_codes.delete(theater.zip)
             end if s[:showtimes] && theater
         
@@ -102,10 +102,9 @@ class OfflineTasks
               
           time_migration.update_attribute(:last_zip, zip)
           
-          status = :completed
           sleep(1)
         end
-        
+        status = :completed
         time_migration.update_attribute(:completed_at, Time.now)
       end
     rescue Exception => e

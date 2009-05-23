@@ -9,7 +9,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20090522230609) do
+ActiveRecord::Schema.define(:version => 20090523034034) do
 
   create_table "movies", :force => true do |t|
     t.string   "title",                         :null => false
@@ -25,12 +25,12 @@ ActiveRecord::Schema.define(:version => 20090522230609) do
     t.integer  "theater_id", :null => false
     t.integer  "movie_id",   :null => false
     t.text     "times"
-    t.date     "date"
+    t.date     "shown_on"
     t.datetime "created_at"
     t.datetime "updated_at"
   end
 
-  add_index "shows", ["theater_id", "movie_id", "date"], :name => "index_shows_on_theater_id_and_movie_id_and_date", :unique => true
+  add_index "shows", ["theater_id", "movie_id", "shown_on"], :name => "index_shows_on_theater_id_and_movie_id_and_date", :unique => true
 
   create_table "theaters", :force => true do |t|
     t.string   "name"
@@ -49,7 +49,7 @@ ActiveRecord::Schema.define(:version => 20090522230609) do
   add_index "theaters", ["yid"], :name => "index_theaters_on_yid", :unique => true
 
   create_table "time_migrations", :force => true do |t|
-    t.date     "date",         :null => false
+    t.date     "migrated_at",  :null => false
     t.datetime "completed_at"
     t.string   "last_zip"
   end
