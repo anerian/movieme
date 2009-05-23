@@ -88,11 +88,13 @@ class OfflineTasks
               show = theater.shows.first(:conditions => {:shown_on => date, :movie_id => movie.id})
               
               if show.blank?
-                show = theater.shows.create(
+                show = theater.shows.new(
                   :movie     => movie,
                   :shown_on  => date,
                   :times     => showtime[:times].to_json
                 ) 
+                show.shown_on = date
+                show.save
               end
               zip_codes.delete(theater.zip)
             end if s[:showtimes] && theater
