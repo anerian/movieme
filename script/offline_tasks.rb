@@ -101,8 +101,8 @@ class OfflineTasks
           end
               
           time_migration.update_attribute(:last_zip, zip)
-          logger.debug("requesting: #{zip}")
           
+          status = :completed
           sleep(1)
         end
         
