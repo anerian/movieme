@@ -7,7 +7,7 @@ class Theater < ActiveRecord::Base
     set_property :latitude_attr   => "lat"
     set_property :longitude_attr  => "lng"
   end
-  has_many :shows, :conditions => {:shown_on => Date.today}
+  has_many :shows
   
   def google_map_location
     [street, city, zip, state].reject{|r| r.blank?}.join(", ").strip.squeeze(" ")
@@ -16,7 +16,7 @@ class Theater < ActiveRecord::Base
   # http://new.api.movies.yahoo.com/v2/listTheatersByPostalCode?mid=1809752801&pcode=20850&count=20&yprop=msapi
   def self.showtimes(postal_code, date = Date.today)
     begin
-      response = HTTParty.get("http://new.api.movies.yahoo.com/v2/listTheatersByPostalCode?pcode=#{postal_code}&count=100&yprop=msapi&date=#{date.to_s(:date_yahoo)}")
+      response = HTTParty.get("http://new.api.movie s.yahoo.com/v2/listTheatersByPostalCode?pcode=#{postal_code}&count=100&yprop=msapi&date=#{date.to_s(:date_yahoo)}")
 
       return response['TheaterList']['Theater'].map do |t|
         {
