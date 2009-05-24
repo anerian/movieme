@@ -56,7 +56,7 @@ class OfflineTasks
         elsif latest_migration.completed_at.blank?
           [:error, latest_migration.migrated_at..Date.today+5]
         else
-          [:completed, [latest_migration.migrated_at, Date.today].max+1..Date.today+5]
+          [:completed, [latest_migration.migrated_at+1, Date.today].max..Date.today+5]
         end
       
       logger.debug("previous status: #{status}")
