@@ -1,1 +1,1 @@
-server "moviemeapp.com", :app, :web, :db, :primary => true
+server "moviemeapp", :app, :web, :db, :primary => true

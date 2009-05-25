@@ -16,5 +16,5 @@ production:
   adapter: mysql
   database: movieme
   username: root
-  password: anerian2009-rocks
+  password: 
   host: 127.0.0.1
