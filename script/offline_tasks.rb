@@ -52,11 +52,11 @@ class OfflineTasks
       # determine the previous state
       status, range = 
         if latest_migration.blank?
-          [:new, current_date..Date.today+5]
+          [:new, current_date..Date.today+3]
         elsif latest_migration.completed_at.blank?
-          [:error, latest_migration.migrated_at..Date.today+5]
+          [:error, latest_migration.migrated_at..Date.today+3]
         else
-          [:completed, [latest_migration.migrated_at+1, Date.today].max..Date.today+5]
+          [:completed, [latest_migration.migrated_at+1, Date.today].max..Date.today+3]
         end
       
       logger.debug("previous status: #{status}")
