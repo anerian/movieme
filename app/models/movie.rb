@@ -4,7 +4,7 @@ class Movie < ActiveRecord::Base
   attr_accessor :image_url
   
   has_attached_file :image, 
-                    :styles         => { :medium => "300x300>", :thumb => "100x100>" },
+                    :styles         => { :thumb => "100x100>" },
                     :storage        => :s3,
                     :s3_credentials => "#{RAILS_ROOT}/config/s3.yml",
                     :path           => ":attachment/:id/:style.:extension"

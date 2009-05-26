@@ -4,5 +4,6 @@
   :name: hpricot
 - :name: httparty
 - :name: json
+- :name: aws-s3
 - :version: 2.3.2
   :name: rails

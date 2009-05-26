@@ -19,6 +19,7 @@ Rails::Initializer.run do |config|
   config.gem "hpricot", :version => '0.6', :source => "http://code.whytheluckystiff.net"
   config.gem "httparty"
   config.gem "json"
+  config.gem "aws-s3", :lib => 'aws/s3'
   
 
   # Only load the plugins named here, in the order given (default is alphabetical).
