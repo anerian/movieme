@@ -11,7 +11,10 @@
       )
     },
     :movies => @movies.map{|movie|
-      movie.attributes
+      movie.attributes.merge(
+        :image => movie.image.url,
+        :thumb => movie.image.url(:thumb)
+      )
     }
   }.to_json
 %>
