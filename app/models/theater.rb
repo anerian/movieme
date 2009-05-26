@@ -1,4 +1,6 @@
 class Theater < ActiveRecord::Base
+  attr_accessor :distance
+  
   has_many :shows
   
   define_index do
@@ -48,7 +50,11 @@ class Theater < ActiveRecord::Base
   end
   
   def self.nearby(lat, lng, date = Date.today)
-    Theater.search('', :geo => [lat.to_radian, lng.to_radian], :order => "@geodist asc", :include => [:shows], :conditions => [%Q{shown_on = "#{Date.today.to_s(:date_yahoo)}"}])
+    theaters = Theater.search('', :geo => [lat.to_radian, lng.to_radian], :order => "@geodist asc", :include => [:shows], :conditions => [%Q{shown_on = "#{Date.today.to_s(:date_yahoo)}"}])
+    theaters.each_with_geodist do |theater, distance|
+      theater.distance = (distance * 0.000621371192)
+    end
+    theaters
   end
   
   def self.select_column(column, rows)
