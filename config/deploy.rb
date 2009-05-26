@@ -1,9 +1,6 @@
 server "moviemeapp", :app, :web, :db, :primary => true
 
-after "deploy:restart", "deploy:search_stop"
-after "deploy:restart", "deploy:search_config"
-after "deploy:restart", "deploy:search_index"
-after "deploy:restart", "deploy:search_start"
+after "deploy:restart", "deploy:search_rebuild"
 
 namespace :deploy do
   desc "Config Search"
@@ -23,8 +20,8 @@ namespace :deploy do
 
   desc "Rebuild Search"
   task :search_rebuild, :roles => :app do
-    run "cd #{current_path} && rake ts:stop RAILS_ENV=production"
     run "cd #{current_path} && rake ts:config RAILS_ENV=production"
+    run "cd #{current_path} && rake ts:stop RAILS_ENV=production"
     run "cd #{current_path} && rake ts:index RAILS_ENV=production"
     run "cd #{current_path} && rake ts:start RAILS_ENV=production"
   end
