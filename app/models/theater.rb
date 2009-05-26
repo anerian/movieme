@@ -1,13 +1,18 @@
 class Theater < ActiveRecord::Base
+  has_many :shows
+  
   define_index do
     indexes name
+    indexes shows(:shown_on), :as => :shown_on
+    
     has 'RADIANS(latitude)',  :as => :lat, :type => :float
     has 'RADIANS(longitude)', :as => :lng, :type => :float
+    
     
     set_property :latitude_attr   => "lat"
     set_property :longitude_attr  => "lng"
   end
-  has_many :shows
+  
   
   def google_map_location
     [street, city, zip, state].reject{|r| r.blank?}.join(", ").strip.squeeze(" ")
