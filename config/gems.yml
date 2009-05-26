@@ -5,5 +5,6 @@
 - :name: httparty
 - :name: json
 - :name: aws-s3
+- :name: paperclip
 - :version: 2.3.2
   :name: rails
