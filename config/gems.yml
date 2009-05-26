@@ -6,5 +6,6 @@
 - :name: json
 - :name: aws-s3
 - :name: paperclip
+- :name: chronic
 - :version: 2.3.2
   :name: rails

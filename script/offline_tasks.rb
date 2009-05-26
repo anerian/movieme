@@ -137,19 +137,42 @@ class OfflineTasks
   def scrape_movie_info
     movies = Movie.all(:conditions => {:processed => false})
     movies.each do |movie|
-
       url = "http://movies.yahoo.com/movie/#{movie.mid}/details"
       response = HTTParty.get(url)
-      
-      doc = Hpricot(response)
-      movie_poster = (doc/'.movie-poster').first['src'] rescue nil      
-      movie.image_url = movie_poster
 
+      released_at = response.match(/Release Date:<\/b><\/font><\/td>\s*<td valign="top"><font face=arial size=-1>([^<]+)/)[1] rescue nil
+      unless released_at.blank?
+        released_at.gsub!('(wide)','')
+        released_at.gsub!(',','')
+        movie.released_at = Chronic.parse(released_at)
+      end
+      
+      duration = response.match(/Running Time:<\/b><\/font><\/td>\s*<td valign="top"><font face=arial size=-1>([^<]+)/)[1] rescue nil
+      unless duration.blank?
+        duration.gsub!(/[^\d]/, ' ')
+        duration = duration.split(/\s+/)
+        movie.duration = duration.length == 1 ? duration[0].to_i : (duration[0].to_i * 60) + duration[1].to_i
+      end
+      
+      gross = response.match(/U.S. Box Office:<\/b><\/font><\/td>\s*<td valign="top"><font face=arial size=-1>([^<]+)/)[1] rescue nil
+      unless gross.blank?
+        gross.gsub!(/[^\d]/, '')
+        movie.gross = gross
+      end
+      
       movie.description = response.match(/<font face=arial size=-1>([^<]+)<br clear="all">/)[1].strip rescue nil
       
       mpaa = response.match(/MPAA Rating:<\/b><\/font><\/td>\s*<td valign="top"><font face=arial size=-1>([^<]+)/)[1] rescue nil
-      movie.rating = mpaa.split(/\s+/).first unless mpaa.blank?
-      movie.rating = 'Not Rated' if movie.rating == 'Not'
+      unless mpaa.blank?
+        movie.rating = mpaa.split(/\s+/).first unless mpaa.blank?
+        movie.rating = 'Not Rated' if movie.rating == 'Not'
+      end
+      
+      if movie.image_url.blank?
+        doc = Hpricot(response)
+        movie_poster = (doc/'.movie-poster').first['src'] rescue nil      
+        movie.image_url = movie_poster
+      end
       
       movie.processed = true
       

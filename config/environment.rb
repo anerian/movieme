@@ -21,6 +21,7 @@ Rails::Initializer.run do |config|
   config.gem "json"
   config.gem "aws-s3", :lib => 'aws/s3'
   config.gem "paperclip"
+  config.gem "chronic"
   
 
   # Only load the plugins named here, in the order given (default is alphabetical).
