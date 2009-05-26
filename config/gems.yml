@@ -1,3 +1,5 @@
 --- 
-- :name: rails
-  :version: 2.3.2
+- :name: httparty
+- :name: json
+- :version: 2.3.2
+  :name: rails

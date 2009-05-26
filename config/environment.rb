@@ -16,8 +16,7 @@ Rails::Initializer.run do |config|
 
   # Specify gems that this application depends on and have them installed with rake gems:install
   # config.gem "bj"
-  # config.gem "hpricot", :version => '0.6', :source => "http://code.whytheluckystiff.net"
-  # config.gem "sqlite3-ruby", :lib => "sqlite3"
+  config.gem "hpricot", :version => '0.6', :source => "http://code.whytheluckystiff.net"
   config.gem "httparty"
   config.gem "json"
   

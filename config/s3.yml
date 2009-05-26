@@ -1,0 +1,14 @@
+development:
+  access_key_id: 1S2SGDW85DBSQ5KEW282
+  secret_access_key: xA22Hrsc3yobzAvPyCeVfNG3HzRl7WE3xBDC1hR4
+  bucket: 'movieme-development'
+
+test:
+  access_key_id: 1S2SGDW85DBSQ5KEW282
+  secret_access_key: xA22Hrsc3yobzAvPyCeVfNG3HzRl7WE3xBDC1hR4
+  bucket: 'movieme-test'
+
+production:
+  access_key_id: 1S2SGDW85DBSQ5KEW282
+  secret_access_key: xA22Hrsc3yobzAvPyCeVfNG3HzRl7WE3xBDC1hR4
+  bucket: 'movieme'

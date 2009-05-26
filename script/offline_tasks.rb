@@ -133,6 +133,33 @@ class OfflineTasks
       )
     end
   end
+  
+  def scrape_movie_info
+    movies = Movie.all(:conditions => {:processed => false})
+    movies.each do |movie|
+
+      url = "http://movies.yahoo.com/movie/#{movie.mid}/details"
+      response = HTTParty.get(url)
+      
+      doc = Hpricot(response)
+      movie_poster = (doc/'.movie-poster').first['src'] rescue nil      
+      movie.image_url = movie_poster
+
+      movie.description = response.match(/<font face=arial size=-1>([^<]+)<br clear="all">/)[1].strip rescue nil
+      
+      mpaa = response.match(/MPAA Rating:<\/b><\/font><\/td>\s*<td valign="top"><font face=arial size=-1>([^<]+)/)[1] rescue nil
+      movie.rating = mpaa.split(/\s+/).first unless mpaa.blank?
+      movie.rating = 'Not Rated' if movie.rating == 'Not'
+      
+      movie.processed = true
+      
+      movie.save
+    end
+  end
+  
+  # http://movies.yahoo.com/movie/1809953162/video
+  def scrape_trailers
+  end
 
   def logger
     @logger = Logger.new(STDOUT)
