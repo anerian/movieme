@@ -1,4 +1,7 @@
 --- 
+- :source: http://code.whytheluckystiff.net
+  :version: = 0.6
+  :name: hpricot
 - :name: httparty
 - :name: json
 - :version: 2.3.2
