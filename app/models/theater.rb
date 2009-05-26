@@ -47,8 +47,8 @@ class Theater < ActiveRecord::Base
     select_column(:zip, connection.select_all("select distinct(zip) as zip from theaters where zip >= '#{zip}' AND zip <= '99999' order by zip asc")) || []
   end
   
-  def self.nearby(lat, lng)
-    Theater.search('', :geo => [lat.to_radian, lng.to_radian], :order => "@geodist asc", :include => [:shows])
+  def self.nearby(lat, lng, date = Date.today)
+    Theater.search('', :geo => [lat.to_radian, lng.to_radian], :order => "@geodist asc", :include => [:shows], :conditions => [%Q{shown_on = "#{Date.today.to_s(:date_yahoo)}"}])
   end
   
   def self.select_column(column, rows)

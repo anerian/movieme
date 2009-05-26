@@ -2,7 +2,7 @@
   {
     :theaters => @theaters.map{|theater|
       theater.attributes.merge(
-        :shows => theater.shows.map{|show|
+        :shows => theater.shows.select{|show| show.shown_on == Date.today}.map{|show|
           {
             :movie_id => show.movie_id,
             :times    => show.data
