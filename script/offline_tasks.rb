@@ -159,7 +159,7 @@ class OfflineTasks
         
         actors = details["CastAndCrew"]["CreditList"].detect{|c| c["job"] == "actor"}
         unless actors.blank?
-          movie.actors = actors["Credit"].map{|credit| credit["Name"]}.to_json
+          movie.actors = actors["Credit"].map{|credit| credit["Name"]}.to_json rescue nil
         end
         
         if movie.image_url.blank?
@@ -171,7 +171,7 @@ class OfflineTasks
         imdb = IMDB.new(movie.title)
         movie.released_at = imdb.date
         movie.duration = imdb.runtime.gsub(/[^\d]/, '').to_i
-        movie.imdbid = imdb.imdb_link.match(/title\/([^\/]+)\//)[1]
+        movie.imdbid = imdb.imdb_link.match(/title\/([^\/]+)\//)[1] rescue nil
       rescue
         logger.debug("cannot find imdb info for #{movie.title}")
       end
