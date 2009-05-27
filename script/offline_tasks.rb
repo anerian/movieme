@@ -72,7 +72,7 @@ class OfflineTasks
             :street => street,
             :city   => city,
             :state  => state,
-            :gid    => current_theater_id
+            :gid    => current_theater_id,
             :movies => []
           }
         else
@@ -105,54 +105,54 @@ class OfflineTasks
     end
   end
   
-  def scrape_google_theaters
-    zip_codes = Theater.all(:group => :zip, :conditions => ['zip > "01000" and zip < "99999"']).map(&:zip)
-
-    while (zip = zip_codes.shift) do
-      puts "updating theaters near #{zip}, #{zip_codes.length} zip codes remaining"
-      # sleep(1)
-      
-      html = Curl::Easy.perform("http://google.com/movies?near=#{zip}").body_str
-      matches = html.scan(/tid=([^"]+)"><b dir=ltr>([^<]+)<\/\s*b>\s*<\/a>\s*<br><font size=-1>([^<]+)/)
-      matches.each do |tid, title, info|
-
-        info.gsub!('&nbsp;', ' ')
-        info.gsub!('&amp;', '&')
-        info.gsub!('&#39;', "'")
-        title.gsub!('&nbsp;', ' ')
-        title.gsub!('&amp;', '&')
-        title.gsub!('&#39;', "'")
-
-        token = title.split(/\s+/)[0]
-        theaters = Theater.all(:conditions => ["zip = '?' and name like '?%' and gid is null", zip, "#{token}%"])
-        if theaters.length == 1
-          theater = theaters.first
-          
-          theater.update_attribute(:gid, tid)
-        
-          zip_codes.delete(theater.zip)
-        end
-        
-        # addr = info.split(/ - /)[0].split(/,/)
-        # phone = (info.split(/ - /)[1].squish rescue nil)
-        # 
-        # street = addr[0].squish
-        # begin
-        # theater = Theater.create(
-        #   :name   => title,
-        #   :tid    => tid,
-        #   :street =>    addr[0].squish,
-        #   :city   => addr[1].squish,
-        #   :state  => addr[2].squish,
-        #   :phone  => (info.split(/ - /)[1].squish rescue nil)
-        # )
-        # rescue Exception => e
-        # end
-
-      end
-      sleep(0.25)
-    end  
-  end
+  # def scrape_google_theaters
+  #   zip_codes = Theater.all(:group => :zip, :conditions => ['zip > "01000" and zip < "99999"']).map(&:zip)
+  # 
+  #   while (zip = zip_codes.shift) do
+  #     puts "updating theaters near #{zip}, #{zip_codes.length} zip codes remaining"
+  #     # sleep(1)
+  #     
+  #     html = Curl::Easy.perform("http://google.com/movies?near=#{zip}").body_str
+  #     matches = html.scan(/tid=([^"]+)"><b dir=ltr>([^<]+)<\/\s*b>\s*<\/a>\s*<br><font size=-1>([^<]+)/)
+  #     matches.each do |tid, title, info|
+  # 
+  #       info.gsub!('&nbsp;', ' ')
+  #       info.gsub!('&amp;', '&')
+  #       info.gsub!('&#39;', "'")
+  #       title.gsub!('&nbsp;', ' ')
+  #       title.gsub!('&amp;', '&')
+  #       title.gsub!('&#39;', "'")
+  # 
+  #       token = title.split(/\s+/)[0]
+  #       theaters = Theater.all(:conditions => ["zip = '?' and name like '?%' and gid is null", zip, "#{token}%"])
+  #       if theaters.length == 1
+  #         theater = theaters.first
+  #         
+  #         theater.update_attribute(:gid, tid)
+  #       
+  #         zip_codes.delete(theater.zip)
+  #       end
+  #       
+  #       # addr = info.split(/ - /)[0].split(/,/)
+  #       # phone = (info.split(/ - /)[1].squish rescue nil)
+  #       # 
+  #       # street = addr[0].squish
+  #       # begin
+  #       # theater = Theater.create(
+  #       #   :name   => title,
+  #       #   :tid    => tid,
+  #       #   :street =>    addr[0].squish,
+  #       #   :city   => addr[1].squish,
+  #       #   :state  => addr[2].squish,
+  #       #   :phone  => (info.split(/ - /)[1].squish rescue nil)
+  #       # )
+  #       # rescue Exception => e
+  #       # end
+  # 
+  #     end
+  #     sleep(0.25)
+  #   end  
+  # end
 
   def refresh_times
     begin
