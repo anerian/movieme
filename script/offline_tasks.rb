@@ -167,10 +167,14 @@ class OfflineTasks
         end
       end
 
-      imdb = IMDB.new(movie.title)
-      movie.released_at = imdb.date
-      movie.duration = imdb.runtime.gsub(/[^\d]/, '').to_i
-      movie.imdbid = imdb.imdb_link.match(/title\/([^\/]+)\//)[1]
+      begin
+        imdb = IMDB.new(movie.title)
+        movie.released_at = imdb.date
+        movie.duration = imdb.runtime.gsub(/[^\d]/, '').to_i
+        movie.imdbid = imdb.imdb_link.match(/title\/([^\/]+)\//)[1]
+      rescue
+        logger.debug("cannot find imdb info for #{movie.title}")
+      end
       
       url = "http://movies.yahoo.com/movie/#{movie.mid}/details"
       response = HTTParty.get(url)
