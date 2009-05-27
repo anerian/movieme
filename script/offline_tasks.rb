@@ -6,7 +6,7 @@ puts "Loading with #{ENV['RAILS_ENV']} environment"
 require File.dirname(__FILE__) + '/../config/environment.rb'
 require 'IMDB'
 
-#59 23 * * * /var/www/apps/movieme/current/script/offline_tasks.rb refresh_times > /var/www/apps/movieme/current/log/refresh_showtimes.log 2>&1
+#59 23 * * * /srv/movieme/current/script/offline_tasks.rb refresh_times > /srv/movieme/current/log/refresh_showtimes.log 2>&1
 class OfflineTasks
   def initialize(task, *params)
     @task = task
@@ -45,6 +45,65 @@ class OfflineTasks
       sleep(1.8)
     end
   end
+
+  def scrape_google_theaters
+    zip_codes = Theater.all(:group => :zip, :conditions => ['zip > "01000" and zip < "99999"']).map(&:zip)
+    while (zip = zip_codes.shift) do
+      logger.debug("retreiving zip code: #{zip}, #{zip_codes.length} remaining")
+      html = Curl::Easy.perform("http://google.com/movies?near=20036&num=100").body_str
+      doc = Hpricot(html)
+      
+      theaters = {}
+      
+      current_theater_id = nil
+      
+      (doc/"table[@cellpadding=3] tr").each do |row|
+        first_cell = row.at('td:first')
+        if first_cell['colspan'] == '4'
+          font = first_cell.at('font:first')
+          font.search('a').remove
+          address, phone = font.inner_html.gsub('&nbsp;', ' ').split(' - ')
+          street, city, state = address.split(',').map(&:strip)
+          
+          current_theater_id = first_cell.at('a:first')['href'].match(/tid=(\w+)$/)[1]
+          theaters[current_theater_id] = {
+            :name   => (first_cell.at('b').inner_text rescue nil),
+            :phone  => phone,
+            :street => street,
+            :city   => city,
+            :state  => state,
+            :gid    => current_theater_id
+            :movies => []
+          }
+        else
+          row.search("td[@valign='top']").each do |cell|
+            trailer_link = cell.at('a.fl:first')
+            
+            movie = {
+              :mid         => (cell.at('a:first')['href'].match(/mid=(\w+)$/)[1] rescue nil),
+              :title       => (cell.at('a:first > b').inner_text rescue nil),
+              :trailer_url => (((trailer_link && trailer_link.inner_text == 'Trailer') ? trailer_link['href'].gsub('/url?q=','') : nil) rescue nil),
+              :imdbid      => (cell.inner_html.match(/http:\/\/www.imdb.com\/title\/([^\/]+)/)[1] rescue nil),
+              :times       => (cell.inner_text.split('IMDb')[1].gsub('?', '').split(/\s+/) rescue nil)
+            }
+
+            theaters[current_theater_id][:movies] << movie
+          end
+        end
+      end
+      
+      theaters.each do |tid, theater|
+        theater = Theater.find_or_create_by_gid(
+          theater.delete(:movies)
+        )
+        unless theater.zip.blank?
+          zip_codes.delete(theater.zip)
+        end
+      end
+      
+      sleep(1)
+    end
+  end
   
   def scrape_google_theaters
     zip_codes = Theater.all(:group => :zip, :conditions => ['zip > "01000" and zip < "99999"']).map(&:zip)
@@ -63,19 +122,21 @@ class OfflineTasks
         title.gsub!('&nbsp;', ' ')
         title.gsub!('&amp;', '&')
         title.gsub!('&#39;', "'")
-        
-        theater = Theater.first(:conditions => {:name => title, :zip => zip})
-        unless theater.blank?
-          theater.update_attribute(:gid, tid)
 
+        token = title.split(/\s+/)[0]
+        theaters = Theater.all(:conditions => ["zip = '?' and name like '?%' and gid is null", zip, "#{token}%"])
+        if theaters.length == 1
+          theater = theaters.first
+          
+          theater.update_attribute(:gid, tid)
+        
           zip_codes.delete(theater.zip)
         end
         
-        
-        # puts "creating #{title}"
         # addr = info.split(/ - /)[0].split(/,/)
         # phone = (info.split(/ - /)[1].squish rescue nil)
         # 
+        # street = addr[0].squish
         # begin
         # theater = Theater.create(
         #   :name   => title,
