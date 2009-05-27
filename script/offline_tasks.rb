@@ -45,6 +45,53 @@ class OfflineTasks
       sleep(1.8)
     end
   end
+  
+  def scrape_google_theaters
+    zip_codes = Theater.all(:group => :zip, :conditions => ['zip > "01000" and zip < "99999"']).map(&:zip)
+
+    while (zip = zip_codes.shift) do
+      puts "updating theaters near #{zip}, #{zip_codes.length} zip codes remaining"
+      # sleep(1)
+      
+      html = Curl::Easy.perform("http://google.com/movies?near=#{zip}").body_str
+      matches = html.scan(/tid=([^"]+)"><b dir=ltr>([^<]+)<\/\s*b>\s*<\/a>\s*<br><font size=-1>([^<]+)/)
+      matches.each do |tid, title, info|
+
+        info.gsub!('&nbsp;', ' ')
+        info.gsub!('&amp;', '&')
+        info.gsub!('&#39;', "'")
+        title.gsub!('&nbsp;', ' ')
+        title.gsub!('&amp;', '&')
+        title.gsub!('&#39;', "'")
+        
+        theater = Theater.first(:conditions => {:name => title, :zip => zip})
+        unless theater.blank?
+          theater.update_attribute(:gid, tid)
+
+          zip_codes.delete(theater.zip)
+        end
+        
+        
+        # puts "creating #{title}"
+        # addr = info.split(/ - /)[0].split(/,/)
+        # phone = (info.split(/ - /)[1].squish rescue nil)
+        # 
+        # begin
+        # theater = Theater.create(
+        #   :name   => title,
+        #   :tid    => tid,
+        #   :street =>    addr[0].squish,
+        #   :city   => addr[1].squish,
+        #   :state  => addr[2].squish,
+        #   :phone  => (info.split(/ - /)[1].squish rescue nil)
+        # )
+        # rescue Exception => e
+        # end
+
+      end
+      sleep(0.25)
+    end  
+  end
 
   def refresh_times
     begin
@@ -144,6 +191,7 @@ class OfflineTasks
         curl.follow_location = true
       end
       url = request.last_effective_url
+      
       unless url.match(/rottentomatoes.com\/search/)
         html = request.body_str        
         movie.tmeter = html.match(/<span class="percent">([^<]+)<\/span>/)[1] rescue nil
@@ -237,6 +285,8 @@ class OfflineTasks
       movie.processed = true      
       movie.save
     end
+    
+    scrape_rottentomatoes
   end
   
   # http://movies.yahoo.com/movie/1809953162/video
