@@ -163,7 +163,7 @@ class OfflineTasks
         end
         
         if movie.image_url.blank?
-          movie.image_url = details["Photos"]["Poster"]["Image"].first
+          movie.image_url = (details["Photos"]["Poster"]["Image"].first rescue nil)
         end
       end
 
