@@ -159,7 +159,7 @@ class OfflineTasks
           movie.tag_list = genre.is_a?(Array) ? genre.join(",") : genre
         end
         
-        actors = details["CastAndCrew"]["CreditList"].detect{|c| c["job"] == "actor"}
+        actors = details["CastAndCrew"]["CreditList"].detect{|c| c["job"] == "actor"} rescue nil
         unless actors.blank?
           movie.actors = actors["Credit"].map{|credit| credit["Name"]}.to_json rescue nil
         end
