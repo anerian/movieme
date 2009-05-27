@@ -92,10 +92,11 @@ class OfflineTasks
         end
       end
       
-      theaters.each do |tid, theater|
-        theater = Theater.find_or_create_by_gid(
-          theater.delete(:movies)
-        )
+      theaters.each do |tid, data|
+        movies = data.delete(:movies)
+        
+        theater = Theater.find_or_create_by_gid(data)
+
         unless theater.zip.blank?
           zip_codes.delete(theater.zip)
         end
