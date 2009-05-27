@@ -151,11 +151,13 @@ class OfflineTasks
         movie.title = details["TitleList"]["Title"]
         movie.distributor = details["Distributor"]
         movie.synopsis = details["Synopsis"]
-        movie.rating = details["RatingList"]["Rating"]
+        movie.rating = (details["RatingList"]["Rating"] rescue nil)
               
-        genre = details["GenreList"]["Genre"]
+        genre = (details["GenreList"]["Genre"] rescue nil)
         
-        movie.tag_list = genre.is_a?(Array) ? genre.join(",") : genre
+        unless genre.blank?
+          movie.tag_list = genre.is_a?(Array) ? genre.join(",") : genre
+        end
         
         actors = details["CastAndCrew"]["CreditList"].detect{|c| c["job"] == "actor"}
         unless actors.blank?
