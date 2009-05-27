@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-ENV['RAILS_ENV'] ||= 'production'
+ENV['RAILS_ENV'] ||= 'development'
 puts "Loading with #{ENV['RAILS_ENV']} environment"
 
 require File.dirname(__FILE__) + '/../config/environment.rb'
@@ -134,7 +134,43 @@ class OfflineTasks
       )
     end
   end
+  
+  def scrape_rottentomatoes
+    movies = Movie.all(:conditions => 'imdbid is not null and reviews_count = 0')
+    movies.each do |movie|
+      logger.debug("#{movie.title}")
 
+      request = Curl::Easy.perform("http://www.rottentomatoes.com/alias?type=imdbid&s=#{movie.imdbid.gsub('tt','')}") do |curl|
+        curl.follow_location = true
+      end
+      url = request.last_effective_url
+      unless url.match(/rottentomatoes.com\/search/)
+        html = request.body_str        
+        movie.tmeter = html.match(/<span class="percent">([^<]+)<\/span>/)[1] rescue nil
+        movie.save
+        
+        reviews_url = "#{url}?critic=creamcrop#contentReviews"
+        reviews_response = HTTParty.get(reviews_url)
+        
+        doc = Hpricot(reviews_response)
+        (doc/"div.quoteBubble").each do |quote|
+          quote_html = quote.inner_html
+          comment = (quote_html.match(/<p>\s*([^<]+)/)[1].strip) rescue nil
+          
+          unless comment.blank?
+            review = movie.reviews.create(
+              :author      => (quote/"div.author > a:first").inner_text,
+              :source      => (quote/"div.source > a:first").inner_text,
+              :comment     => comment,
+              :reviewed_on => Chronic.parse((quote_html.match(/<div class="date">\s*([^<]+)/)[1].strip rescue nil))
+            ) 
+          end
+        end
+      end
+
+      sleep(1)
+    end
+  end
   
   # IMDB
   # http://www.trynt.com/movie-imdb-api/v2/?t=#{movie.title}&fo=json
@@ -142,6 +178,12 @@ class OfflineTasks
   #
   # Yahoo
   # http://new.api.movies.yahoo.com/v2/movieDetails?mid=#{movie.yid}&yprop=msapi
+  #
+  # PostersDB
+  # http://api.movieposterdb.com/json.inc.php?imdb=0308353
+  #
+  # Rottentomatoes
+  # http://www.rottentomatoes.com/alias?type=imdbid&s=0438488
   def scrape_movie_info
     movies = Movie.all(:conditions => {:processed => false})
     movies.each do |movie|

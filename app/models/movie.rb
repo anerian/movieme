@@ -3,6 +3,7 @@ require 'open-uri'
 class Movie < ActiveRecord::Base
   attr_accessor :image_url
   
+  has_many :reviews
   acts_as_taggable
   
   has_attached_file :image, 

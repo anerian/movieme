@@ -9,16 +9,16 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20090527135125) do
+ActiveRecord::Schema.define(:version => 20090527173744) do
 
   create_table "movies", :force => true do |t|
     t.string   "title",                                 :null => false
     t.string   "rating"
     t.integer  "duration"
     t.integer  "mid",                                   :null => false
+    t.boolean  "processed",          :default => false
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.boolean  "processed",          :default => false
     t.text     "synopsis"
     t.string   "image_file_name"
     t.string   "image_remote_url"
@@ -32,7 +32,22 @@ ActiveRecord::Schema.define(:version => 20090527135125) do
     t.string   "directors"
     t.string   "imdbid"
     t.string   "gid"
+    t.integer  "tmeter"
+    t.integer  "reviews_count",      :default => 0
   end
+
+  create_table "reviews", :force => true do |t|
+    t.text     "comment"
+    t.string   "author"
+    t.string   "source"
+    t.integer  "rating"
+    t.date     "reviewed_on"
+    t.integer  "movie_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "reviews", ["author", "source", "movie_id"], :name => "index_reviews_on_author_and_source_and_movie_id", :unique => true
 
   create_table "shows", :force => true do |t|
     t.integer  "theater_id", :null => false
