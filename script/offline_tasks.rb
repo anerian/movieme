@@ -157,13 +157,17 @@ class OfflineTasks
           quote_html = quote.inner_html
           comment = (quote_html.match(/<p>\s*([^<]+)/)[1].strip) rescue nil
           
-          unless comment.blank?
+          if !comment.blank? && (comment != 'Click to read the article')
+            begin
             review = movie.reviews.create(
               :author      => (quote/"div.author > a:first").inner_text,
               :source      => (quote/"div.source > a:first").inner_text,
               :comment     => comment,
               :reviewed_on => Chronic.parse((quote_html.match(/<div class="date">\s*([^<]+)/)[1].strip rescue nil))
             ) 
+            rescue
+              logger.debug("error in saving review")
+            end
           end
         end
       end
