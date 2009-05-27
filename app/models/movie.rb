@@ -3,6 +3,8 @@ require 'open-uri'
 class Movie < ActiveRecord::Base
   attr_accessor :image_url
   
+  acts_as_taggable
+  
   has_attached_file :image, 
                     :styles         => { :thumb => "100x100>" },
                     :storage        => :s3,

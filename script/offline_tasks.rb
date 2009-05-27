@@ -4,6 +4,7 @@ ENV['RAILS_ENV'] ||= 'production'
 puts "Loading with #{ENV['RAILS_ENV']} environment"
 
 require File.dirname(__FILE__) + '/../config/environment.rb'
+require 'IMDB'
 
 #59 23 * * * /var/www/apps/movieme/current/script/offline_tasks.rb refresh_times > /var/www/apps/movieme/current/log/refresh_showtimes.log 2>&1
 class OfflineTasks
@@ -133,26 +134,46 @@ class OfflineTasks
       )
     end
   end
+
   
+  # IMDB
+  # http://www.trynt.com/movie-imdb-api/v2/?t=#{movie.title}&fo=json
+  # http://www.trynt.com/movie-imdb-api/v2/?id=
+  #
+  # Yahoo
+  # http://new.api.movies.yahoo.com/v2/movieDetails?mid=#{movie.yid}&yprop=msapi
   def scrape_movie_info
     movies = Movie.all(:conditions => {:processed => false})
     movies.each do |movie|
+      logger.debug("updating movie: #{movie.title}")
+      yahoo_response = HTTParty.get("http://new.api.movies.yahoo.com/v2/movieDetails?mid=#{movie.mid}&yprop=msapi")
+      if (details = yahoo_response["MovieDetails"])
+        movie.title = details["TitleList"]["Title"]
+        movie.distributor = details["Distributor"]
+        movie.synopsis = details["Synopsis"]
+        movie.rating = details["RatingList"]["Rating"]
+              
+        genre = details["GenreList"]["Genre"]
+        
+        movie.tag_list = genre.is_a?(Array) ? genre.join(",") : genre
+        
+        actors = details["CastAndCrew"]["CreditList"].detect{|c| c["job"] == "actor"}
+        unless actors.blank?
+          movie.actors = actors["Credit"].map{|credit| credit["Name"]}.to_json
+        end
+        
+        if movie.image_url.blank?
+          movie.image_url = details["Photos"]["Poster"]["Image"].first
+        end
+      end
+
+      imdb = IMDB.new(movie.title)
+      movie.released_at = imdb.date
+      movie.duration = imdb.runtime.gsub(/[^\d]/, '').to_i
+      movie.imdbid = imdb.imdb_link.match(/title\/([^\/]+)\//)[1]
+      
       url = "http://movies.yahoo.com/movie/#{movie.mid}/details"
       response = HTTParty.get(url)
-
-      released_at = response.match(/Release Date:<\/b><\/font><\/td>\s*<td valign="top"><font face=arial size=-1>([^<]+)/)[1] rescue nil
-      unless released_at.blank?
-        released_at.gsub!('(wide)','')
-        released_at.gsub!(',','')
-        movie.released_at = Chronic.parse(released_at)
-      end
-      
-      duration = response.match(/Running Time:<\/b><\/font><\/td>\s*<td valign="top"><font face=arial size=-1>([^<]+)/)[1] rescue nil
-      unless duration.blank?
-        duration.gsub!(/[^\d]/, ' ')
-        duration = duration.split(/\s+/)
-        movie.duration = duration.length == 1 ? duration[0].to_i : (duration[0].to_i * 60) + duration[1].to_i
-      end
       
       gross = response.match(/U.S. Box Office:<\/b><\/font><\/td>\s*<td valign="top"><font face=arial size=-1>([^<]+)/)[1] rescue nil
       unless gross.blank?
@@ -160,22 +181,8 @@ class OfflineTasks
         movie.gross = gross
       end
       
-      movie.description = response.match(/<font face=arial size=-1>([^<]+)<br clear="all">/)[1].strip rescue nil
-      
-      mpaa = response.match(/MPAA Rating:<\/b><\/font><\/td>\s*<td valign="top"><font face=arial size=-1>([^<]+)/)[1] rescue nil
-      unless mpaa.blank?
-        movie.rating = mpaa.split(/\s+/).first unless mpaa.blank?
-        movie.rating = 'Not Rated' if movie.rating == 'Not'
-      end
-      
-      if movie.image_url.blank?
-        doc = Hpricot(response)
-        movie_poster = (doc/'.movie-poster').first['src'] rescue nil      
-        movie.image_url = movie_poster
-      end
-      
-      movie.processed = true
-      
+      sleep(1)
+      movie.processed = true      
       movie.save
     end
   end
