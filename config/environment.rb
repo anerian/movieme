@@ -23,6 +23,8 @@ Rails::Initializer.run do |config|
   config.gem "paperclip"
   config.gem "chronic"
   config.gem "curb"
+  config.gem "authlogic"
+  config.gem 'will_paginate'
   
 
   # Only load the plugins named here, in the order given (default is alphabetical).

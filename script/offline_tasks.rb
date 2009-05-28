@@ -68,6 +68,7 @@ class OfflineTasks
         theater = Theater.first(:conditions => ['(name = ? or street = ?) and zip = ?', theater_name, street, theater_zip])
         unless theater.blank?
           logger.debug("theater found: #{theater_name} with theater_id: #{theater_id}")
+          
           theater.imdbid = theater_id
           theater.save
           zip_codes.delete(theater.zip)

@@ -1,0 +1,48 @@
+<div id="block-tables" class="block">
+  <div class="secondary-navigation">
+    <ul>
+      <li class="first active"><a>All</a></li>
+    </ul>
+    <div class="clear">&nbsp;</div>
+  </div>
+  <div class="content">
+    <h2 class="title">All theaters</h2>
+    <div class="inner">
+      <table class="table">
+        <tbody>
+          <tr>
+            <th class="first">
+              <input class="checkbox toggle" type="checkbox"/>
+            </th>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Street</th>
+            <th>City</th>
+            <th>Zip</th>
+            <th class="last">&nbsp;</th>
+          </tr>
+          <% @theaters.each do |theater| %>
+          <tr>
+            <td class="first">
+              <input class="checkbox toggle" type="checkbox"/>
+            </td>
+            <td><%= theater.id %></td>
+            <td><%= theater.name %></td>
+            <td><%= theater.street %></td>
+            <td><%= theater.city %></td>
+            <td><%= theater.zip %></td>
+            <td class="last"><%= link_to 'Edit', edit_admin_theater_path(theater) %></td>
+          </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <div class="actions-bar">
+        <div class="actions">
+          <input type="submit" value="Delete" class="button"/>
+        </div>
+        <%= will_paginate @theaters %>
+        <div class="clear">&nbsp;</div>
+      </div>
+    </div>
+  </div>
+</div>
