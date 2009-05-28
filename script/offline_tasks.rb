@@ -50,7 +50,7 @@ class OfflineTasks
     zip_codes = Theater.all(:group => :zip, :conditions => ['zip > "01000" and zip < "99999"']).map(&:zip)
     while (zip = zip_codes.shift) do
       logger.debug("retreiving zip code: #{zip}, #{zip_codes.length} remaining")
-      html = Curl::Easy.perform("http://google.com/movies?near=20036&num=100").body_str
+      html = Curl::Easy.perform("http://google.com/movies?near=#{zip}&num=100").body_str
       doc = Hpricot(html)
       
       theaters = {}
@@ -95,8 +95,13 @@ class OfflineTasks
       theaters.each do |tid, data|
         movies = data.delete(:movies)
         
-        theater = Theater.find_or_create_by_gid(data)
-
+        theater = Theater.find_by_gid(tid)
+        
+        theater ||= Theater.new(data)
+        theater.gid = tid
+        theater.attributes = data
+        theater.save!
+        
         unless theater.zip.blank?
           zip_codes.delete(theater.zip)
         end
