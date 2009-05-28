@@ -47,13 +47,13 @@ class OfflineTasks
   end
 
   def scrape_google_theaters
-    zip_codes = Theater.all(:group => :zip, :conditions => ['zip > "01000" and zip < "99999"']).map(&:zip)
+    zip_codes = Theater.all(:group => :zip, :conditions => ['zip > "04609" and zip < "99999"']).map(&:zip)
     while (zip = zip_codes.shift) do
       logger.debug("retreiving zip code: #{zip}, #{zip_codes.length} remaining")
       html = Curl::Easy.perform("http://google.com/movies?near=#{zip}&num=100").body_str
       doc = Hpricot(html)
       
-      theaters = {}
+      theaters = []
       
       current_theater_id = nil
       
@@ -65,40 +65,38 @@ class OfflineTasks
           address, phone = font.inner_html.gsub('&nbsp;', ' ').split(' - ')
           street, city, state = address.split(',').map(&:strip)
           
-          current_theater_id = first_cell.at('a:first')['href'].match(/tid=(\w+)$/)[1]
-          theaters[current_theater_id] = {
+          theaters << {
             :name   => (first_cell.at('b').inner_text rescue nil),
             :phone  => phone,
             :street => street,
             :city   => city,
             :state  => state,
-            :gid    => current_theater_id,
+            :gid    => (first_cell.at('a:first')['href'].match(/tid=(\w+)$/)[1] rescue nil),
             :movies => []
           }
         else
           row.search("td[@valign='top']").each do |cell|
-            trailer_link = cell.at('a.fl:first')
+            # trailer_link = cell.at('a.fl:first')
             
-            movie = {
-              :mid         => (cell.at('a:first')['href'].match(/mid=(\w+)$/)[1] rescue nil),
-              :title       => (cell.at('a:first > b').inner_text rescue nil),
-              :trailer_url => (((trailer_link && trailer_link.inner_text == 'Trailer') ? trailer_link['href'].gsub('/url?q=','') : nil) rescue nil),
-              :imdbid      => (cell.inner_html.match(/http:\/\/www.imdb.com\/title\/([^\/]+)/)[1] rescue nil),
-              :times       => (cell.inner_text.split('IMDb')[1].gsub('?', '').split(/\s+/) rescue nil)
-            }
+            # movie = {
+            #   :mid         => (cell.at('a:first')['href'].match(/mid=(\w+)$/)[1] rescue nil),
+            #   :title       => (cell.at('a:first > b').inner_text rescue nil),
+            #   :trailer_url => (((trailer_link && trailer_link.inner_text == 'Trailer') ? trailer_link['href'].gsub('/url?q=','') : nil) rescue nil),
+            #   :imdbid      => (cell.inner_html.match(/http:\/\/www.imdb.com\/title\/([^\/]+)/)[1] rescue nil),
+            #   :times       => (cell.inner_text.split('IMDb')[1].gsub('?', '').split(/\s+/) rescue nil)
+            # }
 
-            theaters[current_theater_id][:movies] << movie
+            # theaters[current_theater_id][:movies] << movie
           end
         end
       end
       
-      theaters.each do |tid, data|
+      theaters.each do |data|
         movies = data.delete(:movies)
         
-        theater = Theater.find_by_gid(tid)
+        theater = data[:gid].blank? ? nil : Theater.find_by_gid(data[:gid])
         
         theater ||= Theater.new(data)
-        theater.gid = tid
         theater.attributes = data
         theater.save!
         
