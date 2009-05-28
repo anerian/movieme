@@ -1,0 +1,60 @@
+<div id="block-forms-2" class="block">
+  <div class="secondary-navigation">
+    <ul>
+      <li class="first active"><a>All</a></li>
+    </ul>
+    <div class="clear">&nbsp;</div>
+  </div>
+  <div class="content">
+    <h2 class="title"><%= @theater.name %></h2>
+    
+    <div class="inner">
+      <% form_for [:admin, @theater], :html => {:class => 'form'} do |form| %>
+      <div class="columns">
+        <div class="column left">
+          <div class="group">
+            <%= form.label :name, 'Name', :class => 'label' %>
+            <%= form.text_field :name %>
+          </div>
+          <div class="group">
+            <%= form.label :street, 'Street', :class => 'label' %>
+            <%= form.text_field :street %>
+          </div>
+          <div class="group">
+            <%= form.label :city, 'City', :class => 'label' %>
+            <%= form.text_field :city %>
+          </div>
+          <div class="group">
+            <%= form.label :state, 'State', :class => 'label' %>
+            <%= form.text_field :state %>
+          </div>
+          <div class="group">
+            <%= form.label :zip, 'Zip', :class => 'label' %>
+            <%= form.text_field :zip %>
+          </div>
+          <div class="clear">&nbsp;</div>
+        </div>
+        <div class="column right">
+          <div class="group">
+            <%= form.label :gid, 'Google ID', :class => 'label' %>
+            <%= form.text_field :gid %>
+          </div>
+          <div class="group">
+            <%= form.label :yid, 'Yahoo ID', :class => 'label' %>
+            <%= form.text_field :yid %>
+          </div>
+          <div class="group">
+            <%= form.label :imdbid, 'IMDB ID', :class => 'label' %>
+            <%= form.text_field :imdbid %>
+          </div>
+        </div>
+        <div class="clear">&nbsp;</div>
+        <div class="group navform">
+          <input type="submit" value="Save →" class="button"/> or <%= link_to 'Cancel', admin_theaters_path %>
+        </div>
+        
+      </div>
+      <% end %>
+    </div>
+  </div>
+</div>

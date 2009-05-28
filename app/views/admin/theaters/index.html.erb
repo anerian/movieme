@@ -8,6 +8,13 @@
   <div class="content">
     <h2 class="title">All theaters</h2>
     <div class="inner">
+      <div class="actions-bar">
+        <div class="actions">
+          <input type="submit" value="Merge" class="button"/>
+        </div>
+        <%= will_paginate @theaters %>
+        <div class="clear">&nbsp;</div>
+      </div>
       <table class="table">
         <tbody>
           <tr>
@@ -16,9 +23,10 @@
             </th>
             <th>ID</th>
             <th>Name</th>
-            <th>Street</th>
-            <th>City</th>
-            <th>Zip</th>
+            <th>Address</th>
+            <th>Yahoo ID</th>
+            <th>Google ID</th>
+            <th>IMDB ID</th>
             <th class="last">&nbsp;</th>
           </tr>
           <% @theaters.each do |theater| %>
@@ -28,9 +36,10 @@
             </td>
             <td><%= theater.id %></td>
             <td><%= theater.name %></td>
-            <td><%= theater.street %></td>
-            <td><%= theater.city %></td>
-            <td><%= theater.zip %></td>
+            <td><%= theater.google_map_location %></td>
+            <td><%= theater.yid %></td>
+            <td><%= theater.gid %></td>
+            <td><%= theater.imdbid %></td>
             <td class="last"><%= link_to 'Edit', edit_admin_theater_path(theater) %></td>
           </tr>
           <% end %>
@@ -38,7 +47,7 @@
       </table>
       <div class="actions-bar">
         <div class="actions">
-          <input type="submit" value="Delete" class="button"/>
+          <input type="submit" value="Merge" class="button"/>
         </div>
         <%= will_paginate @theaters %>
         <div class="clear">&nbsp;</div>
