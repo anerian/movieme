@@ -48,8 +48,9 @@ class OfflineTasks
   end
   
   def scrape_imdb_theaters
-    zip_codes = Theater.all(:group => :zip, :conditions => ['zip > "01000" and zip < "99999"'], :limit => 1).map(&:zip)
+    zip_codes = Theater.all(:group => :zip, :conditions => ['zip > "01000" and zip < "99999"']).map(&:zip)
     while (zip = zip_codes.shift) do
+      logger.debug("ZIP: #{zip}")
       html = Curl::Easy.perform("http://www.imdb.com/showtimes/location/#{zip}/50m").body_str
       doc = Hpricot(html)
       (doc/"table.tabular").each do |table|
@@ -66,8 +67,10 @@ class OfflineTasks
         
         theater = Theater.first(:conditions => ['(name = ? or street = ?) and zip = ?', theater_name, street, theater_zip])
         unless theater.blank?
-          logger.debug("theater found: #{theater_name}")
-          theater.update_attribute(:imdbid, theater_id)
+          logger.debug("theater found: #{theater_name} with theater_id: #{theater_id}")
+          theater.imdbid = theater_id
+          theater.save
+          zip_codes.delete(theater.zip)
         else
           logger.debug("theater create: #{theater_name}")
           Theater.create(
