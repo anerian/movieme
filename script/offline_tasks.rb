@@ -31,12 +31,13 @@ class OfflineTasks
       logger.debug("address #{theater.google_map_location}")
 
       url ="http://maps.google.com/maps/geo?q=#{CGI.escape(theater.google_map_location)}&output=json&key=#{api_key}&oe=utf-8"
+
       json = JSON.parse(Curl::Easy.http_get(url).body_str)
       
       return_code = json["Status"]["code"]
       if return_code == 200
         coor = json["Placemark"].first["Point"]["coordinates"]
-
+        theater.zip = (json["AddressDetails"]["AdministrativeArea"]["PostalCode"]["PostalCodeNumber"] rescue nil)
         theater.latitude = coor[1]
         theater.longitude = coor[0]
         theater.save
@@ -45,9 +46,47 @@ class OfflineTasks
       sleep(1.8)
     end
   end
+  
+  def scrape_imdb_theaters
+    zip_codes = Theater.all(:group => :zip, :conditions => ['zip > "01000" and zip < "99999"'], :limit => 1).map(&:zip)
+    while (zip = zip_codes.shift) do
+      html = Curl::Easy.perform("http://www.imdb.com/showtimes/location/#{zip}/50m").body_str
+      doc = Hpricot(html)
+      (doc/"table.tabular").each do |table|
+        theater_name = (table/"a.heading:first").inner_text
+        theater_id = table.at('a.heading:first')['href'].split('/').last
+
+        address_cell = (table/"td.address:first")
+        theater_group = (address_cell/"a:first").inner_text.gsub('(', '').gsub(')', '')
+        theater_zip = (address_cell/"a:last").inner_text
+        
+        (address_cell/"a").remove
+        address = address_cell.inner_text.strip
+        street, city, state = address.split(',').map(&:strip)
+        
+        theater = Theater.first(:conditions => ['(name = ? or street = ?) and zip = ?', theater_name, street, theater_zip])
+        unless theater.blank?
+          logger.debug("theater found: #{theater_name}")
+          theater.update_attribute(:imdbid, theater_id)
+        else
+          logger.debug("theater create: #{theater_name}")
+          Theater.create(
+            :name   => theater_name,
+            :imdbid => theater_id,
+            :group  => theater_group,
+            :street => street,
+            :city   => city,
+            :state  => state,
+            :zip    => theater_zip
+          )
+        end        
+      end
+      sleep(1)
+    end
+  end
 
   def scrape_google_theaters
-    zip_codes = Theater.all(:group => :zip, :conditions => ['zip > "04609" and zip < "99999"']).map(&:zip)
+    zip_codes = Theater.all(:group => :zip, :conditions => ['zip > "01000" and zip < "99999"']).map(&:zip)
     while (zip = zip_codes.shift) do
       logger.debug("retreiving zip code: #{zip}, #{zip_codes.length} remaining")
       html = Curl::Easy.perform("http://google.com/movies?near=#{zip}&num=100").body_str
@@ -109,55 +148,6 @@ class OfflineTasks
     end
   end
   
-  # def scrape_google_theaters
-  #   zip_codes = Theater.all(:group => :zip, :conditions => ['zip > "01000" and zip < "99999"']).map(&:zip)
-  # 
-  #   while (zip = zip_codes.shift) do
-  #     puts "updating theaters near #{zip}, #{zip_codes.length} zip codes remaining"
-  #     # sleep(1)
-  #     
-  #     html = Curl::Easy.perform("http://google.com/movies?near=#{zip}").body_str
-  #     matches = html.scan(/tid=([^"]+)"><b dir=ltr>([^<]+)<\/\s*b>\s*<\/a>\s*<br><font size=-1>([^<]+)/)
-  #     matches.each do |tid, title, info|
-  # 
-  #       info.gsub!('&nbsp;', ' ')
-  #       info.gsub!('&amp;', '&')
-  #       info.gsub!('&#39;', "'")
-  #       title.gsub!('&nbsp;', ' ')
-  #       title.gsub!('&amp;', '&')
-  #       title.gsub!('&#39;', "'")
-  # 
-  #       token = title.split(/\s+/)[0]
-  #       theaters = Theater.all(:conditions => ["zip = '?' and name like '?%' and gid is null", zip, "#{token}%"])
-  #       if theaters.length == 1
-  #         theater = theaters.first
-  #         
-  #         theater.update_attribute(:gid, tid)
-  #       
-  #         zip_codes.delete(theater.zip)
-  #       end
-  #       
-  #       # addr = info.split(/ - /)[0].split(/,/)
-  #       # phone = (info.split(/ - /)[1].squish rescue nil)
-  #       # 
-  #       # street = addr[0].squish
-  #       # begin
-  #       # theater = Theater.create(
-  #       #   :name   => title,
-  #       #   :tid    => tid,
-  #       #   :street =>    addr[0].squish,
-  #       #   :city   => addr[1].squish,
-  #       #   :state  => addr[2].squish,
-  #       #   :phone  => (info.split(/ - /)[1].squish rescue nil)
-  #       # )
-  #       # rescue Exception => e
-  #       # end
-  # 
-  #     end
-  #     sleep(0.25)
-  #   end  
-  # end
-
   def refresh_times
     begin
       latest_migration = TimeMigration.last
@@ -206,8 +196,11 @@ class OfflineTasks
                   :times     => showtime[:times].to_json
                 ) 
                 show.shown_on = date
-                show.save
+              else
+                show.times = showtime[:times].to_json
               end
+              
+              show.save
               zip_codes.delete(theater.zip)
             end if s[:showtimes] && theater
         

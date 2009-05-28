@@ -9,7 +9,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20090527192558) do
+ActiveRecord::Schema.define(:version => 20090528174320) do
 
   create_table "movies", :force => true do |t|
     t.string   "title",                                 :null => false
@@ -19,13 +19,13 @@ ActiveRecord::Schema.define(:version => 20090527192558) do
     t.boolean  "processed",          :default => false
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.text     "synopsis"
     t.string   "image_file_name"
     t.string   "image_remote_url"
     t.string   "image_content_type"
     t.integer  "image_file_size"
     t.datetime "image_updated_at"
     t.date     "released_at"
+    t.text     "synopsis"
     t.integer  "gross"
     t.string   "distributor"
     t.text     "actors"
@@ -87,6 +87,8 @@ ActiveRecord::Schema.define(:version => 20090527192558) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.string   "gid"
+    t.integer  "imdbid"
+    t.string   "group"
   end
 
   add_index "theaters", ["gid"], :name => "index_theaters_on_gid"
