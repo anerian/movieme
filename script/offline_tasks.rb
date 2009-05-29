@@ -22,6 +22,19 @@ class OfflineTasks
     end
   end
   
+  def automerge
+    unmapped_google_theaters = Theater.all(:conditions => 'gid is null and yid is not null')
+    unmapped_google_theaters.each do |google_theater|
+      yahoo_theater = Theater.first(:conditions => ['yid is not null and name like ? and zip = ? and id != ?', google_theater.name, google_theater.zip, google_theater.id])
+      
+      if yahoo_theater
+        yahoo_theater.gid ||= google_theater.gid
+        yahoo_theater.save
+        google_theater.destroy
+      end
+    end
+  end
+  
   def geocode
     api_key = 'ABQIAAAAPbIrQY6Tw4qExHaj02Mk2hTJOCfMVGUIg4uV8tajlwAIMJR9eBSNs5gOX9cjCKfJ7QCBHlXuqEaxQQ'
     

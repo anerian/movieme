@@ -2,7 +2,7 @@ class Admin::TheatersController < Admin::BaseController
   
   def index
     @page = params[:page] || 1
-    @theaters = Theater.paginate(:page => @page, :order => 'name desc', :per_page => 20)
+    @theaters = Theater.paginate(:page => @page, :order => 'street desc', :per_page => 20)
   end
   
   def edit
