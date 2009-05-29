@@ -40,7 +40,10 @@
             <td><%= theater.yid %></td>
             <td><%= theater.gid %></td>
             <td><%= theater.imdbid %></td>
-            <td class="last"><%= link_to 'Edit', edit_admin_theater_path(theater) %></td>
+            <td class="last">
+              <%= link_to 'Edit', edit_admin_theater_path(theater) %>&nbsp;|&nbsp;
+              <%= link_to 'Delete', admin_theater_path(theater), :confirm => 'Are you sure you want to delete this theater?', :method => :delete %>
+            </td>
           </tr>
           <% end %>
         </tbody>

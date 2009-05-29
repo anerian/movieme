@@ -23,4 +23,11 @@ class Admin::TheatersController < Admin::BaseController
     render :action => 'edit'
   end
   
+  def destroy
+    @theater = Theater.find params[:id]
+    @theater.destroy if @theater
+    
+    redirect_to admin_theaters_path
+  end
+  
 end
