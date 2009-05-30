@@ -135,7 +135,7 @@ class OfflineTasks
             # trailer_link = cell.at('a.fl:first')
             
             # movie = {
-            #   :mid         => (cell.at('a:first')['href'].match(/mid=(\w+)$/)[1] rescue nil),
+            #   :yid         => (cell.at('a:first')['href'].match(/mid=(\w+)$/)[1] rescue nil),
             #   :title       => (cell.at('a:first > b').inner_text rescue nil),
             #   :trailer_url => (((trailer_link && trailer_link.inner_text == 'Trailer') ? trailer_link['href'].gsub('/url?q=','') : nil) rescue nil),
             #   :imdbid      => (cell.inner_html.match(/http:\/\/www.imdb.com\/title\/([^\/]+)/)[1] rescue nil),
@@ -200,8 +200,8 @@ class OfflineTasks
             theater = Theater.find_or_create_by_yid(s[:theater])
         
             s[:showtimes].each do |showtime|          
-              movie = Movie.find_or_create_by_mid(
-                :mid   => showtime[:mid],
+              movie = Movie.find_or_create_by_yid(
+                :yid   => showtime[:mid],
                 :title => showtime[:title]
               )
               show = theater.shows.first(:conditions => {:shown_on => date, :movie_id => movie.id})
@@ -253,6 +253,31 @@ class OfflineTasks
         :state  => addr[2].squish,
         :zip    => addr[3].squish,
         :phone  => (/<td class=ygfa align=right>\s*<small>([^<]+)/.match(doc)[1].squish rescue nil)
+      )
+    end
+  end
+  
+  def scrape_boxoffice_info
+    html = HTTParty.get("http://www.rottentomatoes.com/movie/box_office.php")
+    doc = Hpricot(html)
+    date = (doc/"div.header_text:first").inner_text.gsub("Weekend of","").strip
+
+    weekend = Weekend.find_or_create_by_weekend_at(Date.parse(date))
+    
+    (doc/"table.proViewTbl:first tbody tr").each_with_index do |row, index|
+      this_week, last_week, tmeter, title, num_weeks, weekend_gross, total_gross, theater_avg, num_theaters = row.search('td')
+
+      movie = Movie.find_or_create_by_title(title.inner_text)
+      movie.gross = total_gross.inner_text.gsub(/[^(\d.)]/, '')
+      movie.save
+      
+      weekend.movie_items.find_or_create_by_movie_id(
+        :last_week => last_week.inner_text == 'new' ? nil : this_week.inner_text,
+        :this_week => this_week.inner_text,
+        :weeks_released => num_weeks.inner_text,
+        :weekend_gross => weekend_gross.inner_text.gsub(/[^(\d.)]/, ''),
+        :theater_average => theater_avg.inner_text.gsub(/[^(\d.)]/, ''),
+        :movie_id => movie.id
       )
     end
   end
@@ -315,7 +340,7 @@ class OfflineTasks
     movies = Movie.all(:conditions => {:processed => false})
     movies.each do |movie|
       logger.debug("updating movie: #{movie.title}")
-      yahoo_response = HTTParty.get("http://new.api.movies.yahoo.com/v2/movieDetails?mid=#{movie.mid}&yprop=msapi")
+      yahoo_response = HTTParty.get("http://new.api.movies.yahoo.com/v2/movieDetails?mid=#{movie.yid}&yprop=msapi")
       if (details = yahoo_response["MovieDetails"])
         movie.title = details["TitleList"]["Title"]
         movie.distributor = details["Distributor"]
@@ -347,7 +372,7 @@ class OfflineTasks
         logger.debug("cannot find imdb info for #{movie.title}")
       end
       
-      url = "http://movies.yahoo.com/movie/#{movie.mid}/details"
+      url = "http://movies.yahoo.com/movie/#{movie.yid}/details"
       response = HTTParty.get(url)
       
       gross = response.match(/U.S. Box Office:<\/b><\/font><\/td>\s*<td valign="top"><font face=arial size=-1>([^<]+)/)[1] rescue nil

@@ -9,13 +9,26 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20090528184414) do
+ActiveRecord::Schema.define(:version => 20090529220256) do
+
+  create_table "movie_items", :force => true do |t|
+    t.integer  "last_week"
+    t.integer  "this_week"
+    t.integer  "weeks_released"
+    t.float    "weekend_gross"
+    t.float    "theater_average"
+    t.integer  "movie_id"
+    t.integer  "weekend_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "movie_items", ["movie_id", "weekend_id"], :name => "index_movie_items_on_movie_id_and_weekend_id", :unique => true
 
   create_table "movies", :force => true do |t|
     t.string   "title",                                 :null => false
     t.string   "rating"
     t.integer  "duration"
-    t.integer  "mid",                                   :null => false
     t.boolean  "processed",          :default => false
     t.datetime "created_at"
     t.datetime "updated_at"
@@ -26,7 +39,7 @@ ActiveRecord::Schema.define(:version => 20090528184414) do
     t.datetime "image_updated_at"
     t.date     "released_at"
     t.text     "synopsis"
-    t.integer  "gross"
+    t.float    "gross"
     t.string   "distributor"
     t.text     "actors"
     t.string   "directors"
@@ -34,6 +47,7 @@ ActiveRecord::Schema.define(:version => 20090528184414) do
     t.string   "gid"
     t.integer  "tmeter"
     t.integer  "reviews_count",      :default => 0
+    t.integer  "yid"
   end
 
   create_table "reviews", :force => true do |t|
@@ -116,6 +130,10 @@ ActiveRecord::Schema.define(:version => 20090528184414) do
     t.string   "last_login_ip"
     t.datetime "created_at"
     t.datetime "updated_at"
+  end
+
+  create_table "weekends", :force => true do |t|
+    t.date "weekend_at"
   end
 
 end
