@@ -10,7 +10,6 @@ class Theater < ActiveRecord::Base
     has 'RADIANS(latitude)',  :as => :lat, :type => :float
     has 'RADIANS(longitude)', :as => :lng, :type => :float
     
-    
     set_property :latitude_attr   => "lat"
     set_property :longitude_attr  => "lng"
   end

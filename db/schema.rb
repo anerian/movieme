@@ -9,7 +9,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20090529220256) do
+ActiveRecord::Schema.define(:version => 20090530221439) do
 
   create_table "movie_items", :force => true do |t|
     t.integer  "last_week"
@@ -135,5 +135,13 @@ ActiveRecord::Schema.define(:version => 20090529220256) do
   create_table "weekends", :force => true do |t|
     t.date "weekend_at"
   end
+
+  create_table "zip_codes", :force => true do |t|
+    t.string  "code"
+    t.decimal "latitude",  :precision => 15, :scale => 10
+    t.decimal "longitude", :precision => 15, :scale => 10
+  end
+
+  add_index "zip_codes", ["code"], :name => "index_zip_codes_on_code", :unique => true
 
 end
