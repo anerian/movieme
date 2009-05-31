@@ -140,7 +140,7 @@ class OfflineTasks
               :title       => (cell.at('a:first > b').inner_text rescue nil),
               :trailer_url => (((trailer_link && trailer_link.inner_text == 'Trailer') ? trailer_link['href'].gsub('/url?q=','') : nil) rescue nil),
               :imdbid      => (cell.inner_html.match(/http:\/\/www.imdb.com\/title\/([^\/]+)/)[1] rescue nil),
-              :times       => (cell.inner_text.split('IMDb')[1].gsub('?', '').split(/\s+/) rescue nil)
+              :times       => (cell.at('font:first').inner_html.split('<br />').last.gsub(/<\/?[^>]*>/, "").gsub("&nbsp;", "").split(/\s+/) rescue nil)
             }
             
             current_theater[:movies] << movie
