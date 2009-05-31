@@ -103,92 +103,94 @@ class OfflineTasks
   end
 
   def scrape_google_theaters
-    zip_codes = Theater.all(:group => :zip, :conditions => ['zip > "01000" and zip < "99999"']).map(&:zip)
-    while (zip = zip_codes.shift) do
-      logger.debug("retreiving zip code: #{zip}, #{zip_codes.length} remaining")
-      html = Curl::Easy.perform("http://google.com/movies?near=#{zip}&num=100").body_str
-      doc = Hpricot(html)
+    (1..3).each do |n|
+      zip_codes = Theater.all(:group => :zip, :conditions => ['zip > "01000" and zip < "99999"']).map(&:zip)
+      while (zip = zip_codes.shift) do
+        logger.debug("retreiving zip code: #{zip}, #{zip_codes.length} remaining")
+        html = Curl::Easy.perform("http://google.com/movies?near=#{zip}&num=100&date=#{n}").body_str
+        doc = Hpricot(html)
       
-      theaters = []
+        theaters = []
       
-      current_theater = {}
+        current_theater = {}
       
-      (doc/"table[@cellpadding=3] tr").each do |row|
-        first_cell = row.at('td:first')
-        if first_cell['colspan'] == '4'
-          font = first_cell.at('font:first')
-          font.search('a').remove
-          address, phone = font.inner_html.gsub('&nbsp;', ' ').split(' - ')
-          street, city, state = address.split(',').map(&:strip)
+        (doc/"table[@cellpadding=3] tr").each do |row|
+          first_cell = row.at('td:first')
+          if first_cell['colspan'] == '4'
+            font = first_cell.at('font:first')
+            font.search('a').remove
+            address, phone = font.inner_html.gsub('&nbsp;', ' ').split(' - ')
+            street, city, state = address.split(',').map(&:strip)
           
-          current_theater = {
-            :name   => (first_cell.at('b').inner_text rescue nil),
-            :phone  => phone,
-            :street => street,
-            :city   => city,
-            :state  => state,
-            :gid    => (first_cell.at('a:first')['href'].match(/tid=(\w+)$/)[1] rescue nil),
-            :movies => []
-          }
-          theaters << current_theater
-        else
-          row.search("td[@valign='top']").each do |cell|
-            trailer_link = cell.at('a.fl:first')
-            
-            movie = {
-              :gid         => (cell.at('a:first')['href'].match(/mid=(\w+)$/)[1] rescue nil),
-              :title       => (cell.at('a:first > b').inner_text rescue nil),
-              :trailer_url => (((trailer_link && trailer_link.inner_text == 'Trailer') ? trailer_link['href'].gsub('/url?q=','') : nil) rescue nil),
-              :imdbid      => (cell.inner_html.match(/http:\/\/www.imdb.com\/title\/([^\/]+)/)[1] rescue nil),
-              :times       => (cell.at('font:first').inner_html.split('<br />').last.gsub(/<\/?[^>]*>/, "").gsub("&nbsp;", "").split(/\s+/) rescue nil)
+            current_theater = {
+              :name   => (first_cell.at('b').inner_text rescue nil),
+              :phone  => phone,
+              :street => street,
+              :city   => city,
+              :state  => state,
+              :gid    => (first_cell.at('a:first')['href'].match(/tid=(\w+)$/)[1] rescue nil),
+              :movies => []
             }
+            theaters << current_theater
+          else
+            row.search("td[@valign='top']").each do |cell|
+              trailer_link = cell.at('a.fl:first')
             
-            current_theater[:movies] << movie
+              movie = {
+                :gid         => (cell.at('a:first')['href'].match(/mid=(\w+)$/)[1] rescue nil),
+                :title       => (cell.at('a:first > b').inner_text rescue nil),
+                :trailer_url => (((trailer_link && trailer_link.inner_text == 'Trailer') ? trailer_link['href'].gsub('/url?q=','') : nil) rescue nil),
+                :imdbid      => (cell.inner_html.match(/http:\/\/www.imdb.com\/title\/([^\/]+)/)[1] rescue nil),
+                :times       => (cell.at('font:first').inner_html.split('<br />').last.gsub(/<\/?[^>]*>/, "").gsub("&nbsp;", "").split(/\s+/) rescue nil)
+              }
+            
+              current_theater[:movies] << movie
+            end
           end
         end
-      end
-      date = Date.today
-      theaters.each do |data|
-        movies = data.delete(:movies)
+        date = Date.today
+        theaters.each do |data|
+          movies = data.delete(:movies)
         
-        theater = data[:gid].blank? ? nil : Theater.find_by_gid(data[:gid])
+          theater = data[:gid].blank? ? nil : Theater.find_by_gid(data[:gid])
         
-        theater ||= Theater.new(data)
-        theater.attributes = data
-        theater.save!
+          theater ||= Theater.new(data)
+          theater.attributes = data
+          theater.save!
         
-        movies.each do |movie_data|
-          show_times = movie_data.delete(:times)
+          movies.each do |movie_data|
+            show_times = movie_data.delete(:times)
           
-          movie = Movie.first(:conditions => ['(gid = ? and gid is not null) or imdbid = ? or title like ?', movie_data[:gid], movie_data[:imdbid], movie_data[:title]])
-          if movie.blank?
-            movie = Movie.create(movie_data)
-          else
-            movie.update_attributes(movie_data)
-          end
+            movie = Movie.first(:conditions => ['(gid = ? and gid is not null) or imdbid = ? or title like ?', movie_data[:gid], movie_data[:imdbid], movie_data[:title]])
+            if movie.blank?
+              movie = Movie.create(movie_data)
+            else
+              movie.update_attributes(movie_data)
+            end
           
-          show = theater.shows.first(:conditions => {:shown_on => date, :movie_id => movie.id})
+            show = theater.shows.first(:conditions => {:shown_on => date, :movie_id => movie.id})
 
-          if show.blank?
-            show = theater.shows.new(
-              :movie     => movie,
-              :shown_on  => date,
-              :times     => show_times.to_json
-            ) 
-            show.shown_on = date
-          else
-            show.times = show_times.to_json
-          end
+            if show.blank?
+              show = theater.shows.new(
+                :movie     => movie,
+                :shown_on  => date,
+                :times     => show_times.to_json
+              ) 
+              show.shown_on = date
+            else
+              show.times = show_times.to_json
+            end
           
-          show.save
-        end
+            show.save
+          end
         
-        unless theater.zip.blank?
-          zip_codes.delete(theater.zip)
+          unless theater.zip.blank?
+            zip_codes.delete(theater.zip)
+          end
         end
-      end
       
-      sleep(0.5)
+        sleep(1)
+      end
     end
   end
   
