@@ -111,7 +111,7 @@ class OfflineTasks
       
       theaters = []
       
-      current_theater_id = nil
+      current_theater = {}
       
       (doc/"table[@cellpadding=3] tr").each do |row|
         first_cell = row.at('td:first')
@@ -121,7 +121,7 @@ class OfflineTasks
           address, phone = font.inner_html.gsub('&nbsp;', ' ').split(' - ')
           street, city, state = address.split(',').map(&:strip)
           
-          theaters << {
+          current_theater = {
             :name   => (first_cell.at('b').inner_text rescue nil),
             :phone  => phone,
             :street => street,
@@ -130,23 +130,24 @@ class OfflineTasks
             :gid    => (first_cell.at('a:first')['href'].match(/tid=(\w+)$/)[1] rescue nil),
             :movies => []
           }
+          theaters << current_theater
         else
           row.search("td[@valign='top']").each do |cell|
-            # trailer_link = cell.at('a.fl:first')
+            trailer_link = cell.at('a.fl:first')
             
-            # movie = {
-            #   :yid         => (cell.at('a:first')['href'].match(/mid=(\w+)$/)[1] rescue nil),
-            #   :title       => (cell.at('a:first > b').inner_text rescue nil),
-            #   :trailer_url => (((trailer_link && trailer_link.inner_text == 'Trailer') ? trailer_link['href'].gsub('/url?q=','') : nil) rescue nil),
-            #   :imdbid      => (cell.inner_html.match(/http:\/\/www.imdb.com\/title\/([^\/]+)/)[1] rescue nil),
-            #   :times       => (cell.inner_text.split('IMDb')[1].gsub('?', '').split(/\s+/) rescue nil)
-            # }
-
-            # theaters[current_theater_id][:movies] << movie
+            movie = {
+              :gid         => (cell.at('a:first')['href'].match(/mid=(\w+)$/)[1] rescue nil),
+              :title       => (cell.at('a:first > b').inner_text rescue nil),
+              :trailer_url => (((trailer_link && trailer_link.inner_text == 'Trailer') ? trailer_link['href'].gsub('/url?q=','') : nil) rescue nil),
+              :imdbid      => (cell.inner_html.match(/http:\/\/www.imdb.com\/title\/([^\/]+)/)[1] rescue nil),
+              :times       => (cell.inner_text.split('IMDb')[1].gsub('?', '').split(/\s+/) rescue nil)
+            }
+            
+            current_theater[:movies] << movie
           end
         end
       end
-      
+      date = Date.today
       theaters.each do |data|
         movies = data.delete(:movies)
         
@@ -156,12 +157,38 @@ class OfflineTasks
         theater.attributes = data
         theater.save!
         
+        movies.each do |movie_data|
+          show_times = movie_data.delete(:times)
+          
+          movie = Movie.first(:conditions => ['(gid = ? and gid is not null) or imdbid = ? or title like ?', movie_data[:gid], movie_data[:imdbid], movie_data[:title]])
+          if movie.blank?
+            movie = Movie.create(movie_data)
+          else
+            movie.update_attributes(movie_data)
+          end
+          
+          show = theater.shows.first(:conditions => {:shown_on => date, :movie_id => movie.id})
+
+          if show.blank?
+            show = theater.shows.new(
+              :movie     => movie,
+              :shown_on  => date,
+              :times     => show_times.to_json
+            ) 
+            show.shown_on = date
+          else
+            show.times = show_times.to_json
+          end
+          
+          show.save
+        end
+        
         unless theater.zip.blank?
           zip_codes.delete(theater.zip)
         end
       end
       
-      sleep(1)
+      sleep(0.5)
     end
   end
   

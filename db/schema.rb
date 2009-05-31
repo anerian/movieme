@@ -9,7 +9,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20090530221439) do
+ActiveRecord::Schema.define(:version => 20090531155334) do
 
   create_table "movie_items", :force => true do |t|
     t.integer  "last_week"
@@ -48,6 +48,7 @@ ActiveRecord::Schema.define(:version => 20090530221439) do
     t.integer  "tmeter"
     t.integer  "reviews_count",      :default => 0
     t.integer  "yid"
+    t.string   "trailer_url"
   end
 
   create_table "reviews", :force => true do |t|
