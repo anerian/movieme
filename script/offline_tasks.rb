@@ -148,7 +148,7 @@ class OfflineTasks
             end
           end
         end
-        date = Date.today
+        date = (Date.today + n)
         theaters.each do |data|
           movies = data.delete(:movies)
         
