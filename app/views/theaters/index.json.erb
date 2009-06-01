@@ -1,21 +1,38 @@
 <%= 
   {
     :theaters => @theaters.map{|theater|
-      theater.attributes.merge(
-        :distance => theater.distance,
-        :shows    => theater.shows.select{|show| show.shown_on == Date.today}.map{|show|
+      {
+        :id        => theater.id,
+        :name      => theater.name,
+        :street    => theater.street,
+        :city      => theater.city,
+        :state     => theater.state,
+        :zip       => theater.zip,
+        :phone     => theater.phone,
+        :latitude  => theater.latitude,
+        :longitude => theater.longitude,
+        :distance  => theater.distance,
+        :shows     => theater.shows.select{|show| show.shown_on == Date.today }.map{|show|
           {
             :movie_id => show.movie_id,
             :times    => show.data
           }
         }
-      )
+      }
     },
     :movies => @movies.map{|movie|
-      movie.attributes.merge(
-        :image => movie.image.url,
-        :thumb => movie.image.url(:thumb)
-      )
+      {
+        :id          => movie.id,
+        :title       => movie.title,
+        :rating      => movie.rating,
+        :duration    => movie.duration,
+        :released_at => movie.released_at,
+        :image       => movie.image.url,
+        :thumb       => movie.image.url(:thumb),
+        :synopsis    => movie.synopsis,
+        :gross       => movie.gross,
+        :tmeter      => movie.tmeter
+      }
     }
   }.to_json
 %>

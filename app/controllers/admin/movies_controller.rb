@@ -5,6 +5,10 @@ class Admin::MoviesController < Admin::BaseController
     @movies = Movie.paginate(:page => @page, :order => 'title asc', :per_page => 20)
   end
   
+  def merge
+    
+  end
+  
   def edit
     @movie = Movie.find params[:id]
   end

@@ -15,6 +15,8 @@ class Movie < ActiveRecord::Base
   before_validation :download_remote_image, :if => :image_url_provided?
   validates_presence_of :image_remote_url, :if => :image_url_provided?, :message => 'is invalid or inaccessible'
   
+  RATINGS = ['G', 'M', 'NR', 'PG', 'PG-13', 'R']
+  
   private
     def image_url_provided?
       !self.image_url.blank?

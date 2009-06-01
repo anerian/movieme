@@ -58,3 +58,13 @@
     </div>
   </div>
 </div>
+
+<% content_for :scripts do %>
+  <script type="text/javascript" src="http://yui.yahooapis.com/2.7.0/build/yahoo-dom-event/yahoo-dom-event.js"></script> 
+  <script type="text/javascript" src="http://yui.yahooapis.com/2.7.0/build/element/element-min.js"></script> 
+  <script type="text/javascript" src="http://yui.yahooapis.com/2.7.0/build/calendar/calendar-min.js"></script> 
+  <script type="text/javascript" src="http://yui.yahooapis.com/2.7.0/build/datatable/datatable-min.js"></script>
+  <script type="text/javascript" charset="utf-8">
+    alert('hi');
+  </script>
+<% end %>
